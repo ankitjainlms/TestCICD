@@ -32,6 +32,7 @@
 		C2CAB6492A70FDEE00523471 /* OpenTok.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C2CAB6452A70FDE300523471 /* OpenTok.xcframework */; };
 		C77E71FAF52CFB1549587176 /* Pods_On24ScreenShare_OpenTok_Live.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A18D6DCA1A4BE4C8835D500C /* Pods_On24ScreenShare_OpenTok_Live.framework */; };
 		CE4AAD122D536720002CA123 /* ci_post_clone.sh in Resources */ = {isa = PBXBuildFile; fileRef = CE4AAD102D53671F002CA123 /* ci_post_clone.sh */; };
+		CE9522F52D53896C00B61D0C /* ci_post_clone.sh in Resources */ = {isa = PBXBuildFile; fileRef = CE4AAD102D53671F002CA123 /* ci_post_clone.sh */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -316,6 +317,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CE9522F52D53896C00B61D0C /* ci_post_clone.sh in Resources */,
 				C26DC5EA2BECF3F00049758E /* README.md in Resources */,
 				C2ACAE272BECCE13007179E5 /* Raleway-Medium.ttf in Resources */,
 				C2ACAE2D2BECCE13007179E5 /* Images.xcassets in Resources */,
@@ -459,11 +461,13 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = "OpenTok Live/OpenTokLive.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 18;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = RSJL44J28C;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = RSJL44J28C;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "arm64 i386";
 				FRAMEWORK_SEARCH_PATHS = (
@@ -484,6 +488,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.lms.xcodecloude.broadcast;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Xcode cloud broadcast appstore";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -506,11 +511,13 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = "OpenTok Live/OpenTokLive.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 18;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = RSJL44J28C;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = RSJL44J28C;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "arm64 i386";
 				FRAMEWORK_SEARCH_PATHS = (
@@ -537,6 +544,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.lms.xcodecloude.broadcast;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Xcode cloud broadcast appstore";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -600,9 +608,11 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_ENTITLEMENTS = On24ScreenShare/On24ScreenShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
-				DEVELOPMENT_TEAM = RSJL44J28C;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = RSJL44J28C;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "arm64 i386";
 				FRAMEWORK_SEARCH_PATHS = (
@@ -623,6 +633,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.lms.xcodecloude;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Xcode cloud appstore";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -688,9 +699,11 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_ENTITLEMENTS = On24ScreenShare/On24ScreenShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
-				DEVELOPMENT_TEAM = RSJL44J28C;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = RSJL44J28C;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "arm64 i386";
 				FRAMEWORK_SEARCH_PATHS = (
@@ -711,6 +724,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.lms.xcodecloude;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Xcode cloud appstore";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
