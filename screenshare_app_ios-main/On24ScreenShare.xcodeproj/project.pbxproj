@@ -31,7 +31,6 @@
 		C2CAB6462A70FDE300523471 /* OpenTok.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C2CAB6452A70FDE300523471 /* OpenTok.xcframework */; };
 		C2CAB6492A70FDEE00523471 /* OpenTok.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C2CAB6452A70FDE300523471 /* OpenTok.xcframework */; };
 		C77E71FAF52CFB1549587176 /* Pods_On24ScreenShare_OpenTok_Live.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A18D6DCA1A4BE4C8835D500C /* Pods_On24ScreenShare_OpenTok_Live.framework */; };
-		CE4AAD122D536720002CA123 /* ci_post_clone.sh in Resources */ = {isa = PBXBuildFile; fileRef = CE4AAD102D53671F002CA123 /* ci_post_clone.sh */; };
 		CE9522F52D53896C00B61D0C /* ci_post_clone.sh in Resources */ = {isa = PBXBuildFile; fileRef = CE4AAD102D53671F002CA123 /* ci_post_clone.sh */; };
 /* End PBXBuildFile section */
 
@@ -313,7 +312,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CE4AAD122D536720002CA123 /* ci_post_clone.sh in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
