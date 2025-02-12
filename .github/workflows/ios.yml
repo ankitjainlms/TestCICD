@@ -8,14 +8,16 @@ on:
 
 jobs:
   trigger_xcode_cloud:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest  # ✅ Run on macOS instead of Ubuntu
     steps:
+      - name: 🔑 Checkout Repository
+        uses: actions/checkout@v4
+
       - name: 🔑 Generate JWT Token
         id: jwt
         run: |
           echo "Generating JWT..."
           echo "${{ secrets.APPSTORE_PRIVATE_KEY }}" > AuthKey.p8
-          sudo apt-get install -y openssl jq
           HEADER=$(echo -n '{"alg":"ES256","kid":"${{ secrets.APPSTORE_KEY_ID }}"}' | base64 | tr -d '=' | tr '/+' '_-')
           PAYLOAD=$(echo -n '{"iss":"${{ secrets.APPSTORE_ISSUER_ID }}","iat":'$(date +%s)',"exp":'$(($(date +%s) + 1200))',"aud":"appstoreconnect-v1"}' | base64 | tr -d '=' | tr '/+' '_-')
           SIGNATURE=$(echo -n "$HEADER.$PAYLOAD" | openssl dgst -sha256 -binary -sign AuthKey.p8 | base64 | tr -d '=' | tr '/+' '_-')
@@ -39,4 +41,3 @@ jobs:
                 }
               }
             }'
-
