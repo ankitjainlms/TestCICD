@@ -1,0 +1,42 @@
+name: 🚀 Trigger Xcode Cloud Build
+
+on:
+  workflow_dispatch:  # Manually trigger from GitHub Actions
+  push:
+    branches:
+      - main  # Change to your default branch if needed
+
+jobs:
+  trigger_xcode_cloud:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔑 Generate JWT Token
+        id: jwt
+        run: |
+          echo "Generating JWT..."
+          echo "${{ secrets.APPSTORE_PRIVATE_KEY }}" > AuthKey.p8
+          sudo apt-get install -y openssl jq
+          HEADER=$(echo -n '{"alg":"ES256","kid":"${{ secrets.APPSTORE_KEY_ID }}"}' | base64 | tr -d '=' | tr '/+' '_-')
+          PAYLOAD=$(echo -n '{"iss":"${{ secrets.APPSTORE_ISSUER_ID }}","iat":'$(date +%s)',"exp":'$(($(date +%s) + 1200))',"aud":"appstoreconnect-v1"}' | base64 | tr -d '=' | tr '/+' '_-')
+          SIGNATURE=$(echo -n "$HEADER.$PAYLOAD" | openssl dgst -sha256 -binary -sign AuthKey.p8 | base64 | tr -d '=' | tr '/+' '_-')
+          echo "JWT_TOKEN=$HEADER.$PAYLOAD.$SIGNATURE" >> $GITHUB_ENV
+
+      - name: 🚀 Start Xcode Cloud Build
+        run: |
+          curl -X POST "https://api.appstoreconnect.apple.com/v1/ciBuildRuns" \
+            -H "Authorization: Bearer $JWT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "data": {
+                "type": "ciBuildRuns",
+                "relationships": {
+                  "workflow": {
+                    "data": {
+                      "type": "ciWorkflows",
+                      "id": "${{ secrets.XCODE_CLOUD_WORKFLOW_ID }}"
+                    }
+                  }
+                }
+              }
+            }'
+
