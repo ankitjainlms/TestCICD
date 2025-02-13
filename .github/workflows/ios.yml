@@ -10,7 +10,8 @@
     # Ensure the private key is correctly base64 decoded
     echo "$APPSTORE_PRIVATE_KEY" | base64 --decode > AuthKey.p8 || { echo "❌ Failed to decode APPSTORE_PRIVATE_KEY"; exit 1; }
 
-    python3 <<EOF
+    # Run Python script properly inside a HEREDOC
+    python3 - <<EOF
 import jwt
 import time
 import os
