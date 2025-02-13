@@ -1,9 +1,11 @@
+- name: 🛠️ Install Dependencies
+  run: |
+    python3 -m venv venv
+    source venv/bin/activate
+    python3 -m pip install --upgrade pip
+    pip install PyJWT
+
 - name: 🔑 Generate JWT Token (Python)
-  id: jwt
-  env:
-    APPSTORE_KEY_ID: ${{ vars.APPSTORE_KEY_ID }}
-    APPSTORE_ISSUER_ID: ${{ vars.APPSTORE_ISSUER_ID }}
-    APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
   run: |
     source venv/bin/activate
     echo "Using APPSTORE_KEY_ID: $APPSTORE_KEY_ID"
@@ -14,33 +16,5 @@ import jwt
 import time
 import os
 
-key_path = 'AuthKey.p8'
-key_id = os.getenv('APPSTORE_KEY_ID')
-issuer_id = os.getenv('APPSTORE_ISSUER_ID')
-
-if not key_id or not key_id.strip():
-    raise ValueError('❌ ERROR: APPSTORE_KEY_ID is missing or empty!')
-if not issuer_id or not issuer_id.strip():
-    raise ValueError('❌ ERROR: APPSTORE_ISSUER_ID is missing or empty!')
-
-# ✅ Read private key in binary mode to prevent UnicodeDecodeError
-with open(key_path, 'rb') as key_file:
-    private_key = key_file.read()
-
-current_time = int(time.time())
-payload = {
-    'iss': issuer_id,
-    'iat': current_time,
-    'exp': current_time + 1200,
-    'aud': 'appstoreconnect-v1'
-}
-
-headers = {'alg': 'ES256', 'kid': key_id.strip()}
-token = jwt.encode(payload, private_key, algorithm='ES256', headers=headers)
-
-print(f'✅ JWT Token Generated: {token[:20]}... (truncated)')
-
-# ✅ Save JWT token in GitHub environment
-with open(os.environ['GITHUB_ENV'], 'a') as env_file:
-    env_file.write(f'JWT_TOKEN={token}\n')
+print('✅ PyJWT module is working')
 "
