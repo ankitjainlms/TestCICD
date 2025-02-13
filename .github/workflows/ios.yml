@@ -13,10 +13,12 @@ jobs:
       - name: 🔑 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 🛠 Install Dependencies
+      - name: 🛠 Set Up Python Virtual Environment & Install Dependencies
         run: |
+          python3 -m venv venv
+          source venv/bin/activate
           python3 -m pip install --upgrade pip
-          pip3 install pyjwt cryptography  # ✅ Install dependencies
+          pip install pyjwt cryptography
 
       - name: 🔍 Debug GitHub Secrets
         run: |
@@ -29,6 +31,7 @@ jobs:
       - name: 🔑 Generate JWT Token (Python)
         id: jwt
         run: |
+          source venv/bin/activate  # ✅ Activate Virtual Environment
           echo "Using APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}"
           echo "${{ secrets.APPSTORE_PRIVATE_KEY }}" | base64 -D > AuthKey.p8  # ✅ Fix `base64 --decode`
 
@@ -65,6 +68,7 @@ jobs:
 
       - name: 🚀 Start Xcode Cloud Build
         run: |
+          source venv/bin/activate  # ✅ Activate Virtual Environment
           curl -X POST "https://api.appstoreconnect.apple.com/v1/ciBuildRuns" \
             -H "Authorization: Bearer $JWT_TOKEN" \
             -H "Content-Type: application/json" \
