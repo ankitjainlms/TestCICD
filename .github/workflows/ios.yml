@@ -8,7 +8,7 @@ on:
 
 jobs:
   trigger_xcode_cloud:
-    runs-on: macos-latest  # ✅ Ensure it runs on macOS
+    runs-on: macos-latest  # ✅ Ensures it runs on macOS
     steps:
       - name: 🔑 Checkout Repository
         uses: actions/checkout@v4
@@ -53,7 +53,7 @@ if not key_id or not key_id.strip():
 if not issuer_id or not issuer_id.strip():
     raise ValueError("❌ ERROR: APPSTORE_ISSUER_ID is missing or empty!")
 
-# ✅ Read the private key in binary mode to prevent UnicodeDecodeError
+# ✅ Read private key in binary mode to prevent UnicodeDecodeError
 with open(key_path, "rb") as key_file:
     private_key = key_file.read()
 
@@ -69,6 +69,8 @@ headers = {"alg": "ES256", "kid": key_id.strip()}
 token = jwt.encode(payload, private_key, algorithm="ES256", headers=headers)
 
 print(f"✅ JWT Token Generated: {token[:20]}... (truncated)")
+
+# ✅ Save JWT token in GitHub environment
 with open(os.environ["GITHUB_ENV"], "a") as env_file:
     env_file.write(f"JWT_TOKEN={token}\n")
 EOF
