@@ -1,14 +1,15 @@
 name: 🚀 Trigger Xcode Cloud Build
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Allows manual trigger
   push:
     branches:
-      - main
+      - main  # Change if needed
 
 jobs:
   trigger_xcode_cloud:
-    runs-on: macos-latest
+    runs-on: macos-latest  # ✅ Ensure it runs on macOS
+
     steps:
       - name: 🔑 Checkout Repository
         uses: actions/checkout@v4
@@ -21,33 +22,41 @@ jobs:
           if [ -z "${{ secrets.APPSTORE_PRIVATE_KEY }}" ]; then echo "❌ APPSTORE_PRIVATE_KEY is missing!"; exit 1; fi
           echo "✅ All required secrets are set!"
 
-      - name: 🛠️ Install Dependencies
+      - name: 📦 Install Dependencies
         run: |
           python3 -m venv venv
           source venv/bin/activate
           python3 -m pip install --upgrade pip
-          pip install PyJWT
+          python3 -m pip install pyjwt cryptography
 
       - name: 🔑 Generate JWT Token (Python)
+        id: jwt
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
         run: |
           source venv/bin/activate
-          echo "Using APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}"
-          echo "${{ secrets.APPSTORE_PRIVATE_KEY }}" | base64 --decode > AuthKey.p8
-          
+          echo "Using APPSTORE_KEY_ID: $APPSTORE_KEY_ID"
+          echo "$APPSTORE_PRIVATE_KEY" | base64 --decode > AuthKey.p8
+
           python3 - <<EOF
           import jwt
           import time
           import os
 
           key_path = "AuthKey.p8"
-          key_id = os.getenv("APPSTORE_KEY_ID")
-          issuer_id = os.getenv("APPSTORE_ISSUER_ID")
+          key_id = os.getenv("APPSTORE_KEY_ID", "").strip()
+          issuer_id = os.getenv("APPSTORE_ISSUER_ID", "").strip()
 
-          if not key_id or not key_id.strip():
+          if not key_id:
               raise ValueError("❌ ERROR: APPSTORE_KEY_ID is missing or empty!")
+          if not issuer_id:
+              raise ValueError("❌ ERROR: APPSTORE_ISSUER_ID is missing or empty!")
 
-          with open(key_path, "rb") as key_file:  # ✅ Open in binary mode
-              private_key = key_file.read()
+          print("✅ Read private key in binary mode to prevent UnicodeDecodeError")
+          with open(key_path, "rb") as key_file:
+              private_key = key_file.read().decode("utf-8")
 
           current_time = int(time.time())
           payload = {
@@ -57,7 +66,7 @@ jobs:
               "aud": "appstoreconnect-v1"
           }
 
-          headers = {"alg": "ES256", "kid": key_id.strip()}
+          headers = {"alg": "ES256", "kid": key_id}
           token = jwt.encode(payload, private_key, algorithm="ES256", headers=headers)
 
           print(f"✅ JWT Token Generated: {token[:20]}... (truncated)")
