@@ -1,17 +1,23 @@
 name: 🚀 Trigger Xcode Cloud Build
 
 on:
-  workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch:
   push:
     branches:
-      - main  # Change if needed
+      - main
 
 jobs:
   trigger_xcode_cloud:
-    runs-on: macos-latest  # ✅ Ensure it runs on macOS
+    runs-on: macos-latest
     steps:
       - name: 🔑 Checkout Repository
         uses: actions/checkout@v4
+
+      - name: 🛠 Debug Environment Variables
+        run: |
+          echo "APPSTORE_KEY_ID: '${{ secrets.APPSTORE_KEY_ID }}'"
+          echo "APPSTORE_ISSUER_ID: '${{ secrets.APPSTORE_ISSUER_ID }}'"
+          echo "APPSTORE_PRIVATE_KEY: '${{ secrets.APPSTORE_PRIVATE_KEY }}'"
 
       - name: 🛠 Set Up Python Virtual Environment & Install Dependencies
         run: |
@@ -20,20 +26,16 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install pyjwt cryptography
 
-      - name: 🔍 Debug GitHub Secrets
-        run: |
-          echo "Checking GitHub Secrets..."
-          if [ -z "${{ secrets.APPSTORE_KEY_ID }}" ]; then echo "❌ APPSTORE_KEY_ID is missing!"; exit 1; fi
-          if [ -z "${{ secrets.APPSTORE_ISSUER_ID }}" ]; then echo "❌ APPSTORE_ISSUER_ID is missing!"; exit 1; fi
-          if [ -z "${{ secrets.APPSTORE_PRIVATE_KEY }}" ]; then echo "❌ APPSTORE_PRIVATE_KEY is missing!"; exit 1; fi
-          echo "✅ All required secrets are set!"
-
       - name: 🔑 Generate JWT Token (Python)
         id: jwt
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
         run: |
-          source venv/bin/activate  # ✅ Activate Virtual Environment
-          echo "Using APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}"
-          echo "${{ secrets.APPSTORE_PRIVATE_KEY }}" | base64 -D > AuthKey.p8  # ✅ Fix `base64 --decode`
+          source venv/bin/activate
+          echo "Using APPSTORE_KEY_ID: $APPSTORE_KEY_ID"
+          echo "$APPSTORE_PRIVATE_KEY" | base64 --decode > AuthKey.p8
 
           python3 <<EOF
           import jwt
@@ -46,6 +48,8 @@ jobs:
 
           if not key_id or not key_id.strip():
               raise ValueError("❌ ERROR: APPSTORE_KEY_ID is missing or empty!")
+          if not issuer_id or not issuer_id.strip():
+              raise ValueError("❌ ERROR: APPSTORE_ISSUER_ID is missing or empty!")
 
           with open(key_path, "r") as key_file:
               private_key = key_file.read()
@@ -68,7 +72,7 @@ jobs:
 
       - name: 🚀 Start Xcode Cloud Build
         run: |
-          source venv/bin/activate  # ✅ Activate Virtual Environment
+          source venv/bin/activate
           curl -X POST "https://api.appstoreconnect.apple.com/v1/ciBuildRuns" \
             -H "Authorization: Bearer $JWT_TOKEN" \
             -H "Content-Type: application/json" \
