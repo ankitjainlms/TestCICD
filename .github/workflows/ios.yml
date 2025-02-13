@@ -1,20 +1,85 @@
-- name: 🛠️ Install Dependencies
-  run: |
-    python3 -m venv venv
-    source venv/bin/activate
-    python3 -m pip install --upgrade pip
-    pip install PyJWT
+name: 🚀 Trigger Xcode Cloud Build
 
-- name: 🔑 Generate JWT Token (Python)
-  run: |
-    source venv/bin/activate
-    echo "Using APPSTORE_KEY_ID: $APPSTORE_KEY_ID"
-    echo "$APPSTORE_PRIVATE_KEY" | base64 --decode > AuthKey.p8
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
 
-    python3 -c "
-import jwt
-import time
-import os
+jobs:
+  trigger_xcode_cloud:
+    runs-on: macos-latest
+    steps:
+      - name: 🔑 Checkout Repository
+        uses: actions/checkout@v4
 
-print('✅ PyJWT module is working')
-"
+      - name: 🔍 Debug GitHub Secrets
+        run: |
+          echo "Checking GitHub Secrets..."
+          if [ -z "${{ secrets.APPSTORE_KEY_ID }}" ]; then echo "❌ APPSTORE_KEY_ID is missing!"; exit 1; fi
+          if [ -z "${{ secrets.APPSTORE_ISSUER_ID }}" ]; then echo "❌ APPSTORE_ISSUER_ID is missing!"; exit 1; fi
+          if [ -z "${{ secrets.APPSTORE_PRIVATE_KEY }}" ]; then echo "❌ APPSTORE_PRIVATE_KEY is missing!"; exit 1; fi
+          echo "✅ All required secrets are set!"
+
+      - name: 🛠️ Install Dependencies
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          python3 -m pip install --upgrade pip
+          pip install PyJWT
+
+      - name: 🔑 Generate JWT Token (Python)
+        run: |
+          source venv/bin/activate
+          echo "Using APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}"
+          echo "${{ secrets.APPSTORE_PRIVATE_KEY }}" | base64 --decode > AuthKey.p8
+          
+          python3 - <<EOF
+          import jwt
+          import time
+          import os
+
+          key_path = "AuthKey.p8"
+          key_id = os.getenv("APPSTORE_KEY_ID")
+          issuer_id = os.getenv("APPSTORE_ISSUER_ID")
+
+          if not key_id or not key_id.strip():
+              raise ValueError("❌ ERROR: APPSTORE_KEY_ID is missing or empty!")
+
+          with open(key_path, "rb") as key_file:  # ✅ Open in binary mode
+              private_key = key_file.read()
+
+          current_time = int(time.time())
+          payload = {
+              "iss": issuer_id,
+              "iat": current_time,
+              "exp": current_time + 1200,
+              "aud": "appstoreconnect-v1"
+          }
+
+          headers = {"alg": "ES256", "kid": key_id.strip()}
+          token = jwt.encode(payload, private_key, algorithm="ES256", headers=headers)
+
+          print(f"✅ JWT Token Generated: {token[:20]}... (truncated)")
+          with open(os.environ["GITHUB_ENV"], "a") as env_file:
+              env_file.write(f"JWT_TOKEN={token}\n")
+          EOF
+
+      - name: 🚀 Start Xcode Cloud Build
+        run: |
+          curl -X POST "https://api.appstoreconnect.apple.com/v1/ciBuildRuns" \
+            -H "Authorization: Bearer $JWT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "data": {
+                "type": "ciBuildRuns",
+                "relationships": {
+                  "workflow": {
+                    "data": {
+                      "type": "ciWorkflows",
+                      "id": "${{ secrets.XCODE_CLOUD_WORKFLOW_ID }}"
+                    }
+                  }
+                }
+              }
+            }'
