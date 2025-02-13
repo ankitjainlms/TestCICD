@@ -18,10 +18,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install "pyjwt[crypto]" cryptography requests
 
-      - name: 🔑 Generate JWT Token (Python)
+            - name: 🔑 Generate JWT Token (Python)
         id: jwt
         run: |
+          echo "Using APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}"
           echo "${{ secrets.APPSTORE_PRIVATE_KEY }}" | base64 --decode > AuthKey.p8
+          
           python - <<EOF
           import jwt
           import time
@@ -30,6 +32,9 @@ jobs:
           key_path = "AuthKey.p8"
           key_id = os.getenv("APPSTORE_KEY_ID")
           issuer_id = os.getenv("APPSTORE_ISSUER_ID")
+
+          if not key_id or not key_id.strip():
+              raise ValueError("❌ ERROR: APPSTORE_KEY_ID is missing or empty!")
 
           with open(key_path, "r") as key_file:
               private_key = key_file.read()
@@ -42,13 +47,14 @@ jobs:
               "aud": "appstoreconnect-v1"
           }
 
-          headers = {"alg": "ES256", "kid": key_id}
+          headers = {"alg": "ES256", "kid": key_id.strip()}
           token = jwt.encode(payload, private_key, algorithm="ES256", headers=headers)
 
-          print(f"JWT_TOKEN={token}")
+          print(f"✅ JWT Token Generated: {token[:20]}... (truncated)")
           with open(os.environ["GITHUB_ENV"], "a") as env_file:
               env_file.write(f"JWT_TOKEN={token}\n")
           EOF
+
 
       - name: 🚀 Start Xcode Cloud Build
         run: |
