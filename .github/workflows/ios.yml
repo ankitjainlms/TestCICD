@@ -1,17 +1,47 @@
-- name: 🔑 Generate JWT Token (Python)
-  id: jwt
-  env:
-    APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
-    APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
-    APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
-  run: |
-    echo "Using APPSTORE_KEY_ID: $APPSTORE_KEY_ID"
+name: 🚀 Trigger Xcode Cloud Build
 
-    # Ensure the private key is correctly base64 decoded
-    echo "$APPSTORE_PRIVATE_KEY" | base64 --decode > AuthKey.p8 || { echo "❌ Failed to decode APPSTORE_PRIVATE_KEY"; exit 1; }
+on:
+  workflow_dispatch:  # Allows manual trigger
+  push:
+    branches:
+      - main  # Change this to your default branch if different
 
-    # Run Python script properly inside a HEREDOC
-    python3 - <<EOF
+jobs:
+  trigger_xcode_cloud:
+    runs-on: macos-latest  # ✅ Ensure it runs on macOS
+    steps:
+      - name: 🔑 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔍 Debug GitHub Secrets
+        run: |
+          echo "Checking GitHub Secrets..."
+          if [ -z "${{ secrets.APPSTORE_KEY_ID }}" ]; then echo "❌ APPSTORE_KEY_ID is missing!"; exit 1; fi
+          if [ -z "${{ secrets.APPSTORE_ISSUER_ID }}" ]; then echo "❌ APPSTORE_ISSUER_ID is missing!"; exit 1; fi
+          if [ -z "${{ secrets.APPSTORE_PRIVATE_KEY }}" ]; then echo "❌ APPSTORE_PRIVATE_KEY is missing!"; exit 1; fi
+          echo "✅ All required secrets are set!"
+
+      - name: 🛠 Install Dependencies
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install pyjwt cryptography
+
+      - name: 🔑 Generate JWT Token (Python)
+        id: jwt
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          echo "Using APPSTORE_KEY_ID: $APPSTORE_KEY_ID"
+
+          # Decode Base64 encoded secret key properly
+          echo "$APPSTORE_PRIVATE_KEY" | base64 --decode > AuthKey.p8 || { echo "❌ Failed to decode APPSTORE_PRIVATE_KEY"; exit 1; }
+
+          # Run Python script properly inside a HEREDOC
+          python3 <<EOF
 import jwt
 import time
 import os
@@ -42,6 +72,25 @@ token = jwt.encode(payload, private_key, algorithm="ES256", headers=headers)
 
 print(f"✅ JWT Token Generated: {token[:20]}... (truncated)")
 
-with open(os.environ["GITHUB_ENV"], "a") as env_file:
+with open(os.getenv("GITHUB_ENV"), "a") as env_file:
     env_file.write(f"JWT_TOKEN={token}\n")
 EOF
+
+      - name: 🚀 Start Xcode Cloud Build
+        run: |
+          curl -X POST "https://api.appstoreconnect.apple.com/v1/ciBuildRuns" \
+            -H "Authorization: Bearer $JWT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "data": {
+                "type": "ciBuildRuns",
+                "relationships": {
+                  "workflow": {
+                    "data": {
+                      "type": "ciWorkflows",
+                      "id": "${{ secrets.XCODE_CLOUD_WORKFLOW_ID }}"
+                    }
+                  }
+                }
+              }
+            }'
