@@ -16,15 +16,15 @@ jobs:
       - name: 🔍 Debug GitHub Secrets
         run: |
           echo "Checking GitHub Secrets..."
-          if [ -z "${{ secrets.APPSTORE_KEY_ID }}" ]; then echo "❌ APPSTORE_KEY_ID is missing!"; exit 1; fi
-          if [ -z "${{ secrets.APPSTORE_ISSUER_ID }}" ]; then echo "❌ APPSTORE_ISSUER_ID is missing!"; exit 1; fi
+          if [ -z "${{ vars.APPSTORE_KEY_ID }}" ]; then echo "❌ APPSTORE_KEY_ID is missing!"; exit 1; fi
+          if [ -z "${{ vars.APPSTORE_ISSUER_ID }}" ]; then echo "❌ APPSTORE_ISSUER_ID is missing!"; exit 1; fi
           if [ -z "${{ secrets.APPSTORE_PRIVATE_KEY }}" ]; then echo "❌ APPSTORE_PRIVATE_KEY is missing!"; exit 1; fi
           echo "✅ All required secrets are set!"
 
       - name: 🔑 Generate JWT Token (Python)
         id: jwt
         run: |
-          echo "Using APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}"
+          echo "Using APPSTORE_KEY_ID: ${{ vars.APPSTORE_KEY_ID }}"
           echo "${{ secrets.APPSTORE_PRIVATE_KEY }}" | base64 --decode > AuthKey.p8
           
           python - <<EOF
