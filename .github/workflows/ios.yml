@@ -1,47 +1,64 @@
-- name: 🔑 Generate JWT Token (Python)
-  id: jwt
-  env:
-    APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
-    APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
-    APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
-  run: |
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install --upgrade pip
-    pip install pyjwt cryptography  # ✅ Install required dependencies
+name: 🚀 Trigger Xcode Cloud Build
 
-    echo "Using APPSTORE_KEY_ID: $APPSTORE_KEY_ID"
-    echo "$APPSTORE_PRIVATE_KEY" | base64 --decode > AuthKey.p8
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main  # Change to your main branch if needed
 
-    python3 <<EOF
-    import jwt
-    import time
-    import os
+jobs:
+  trigger_xcode_cloud:
+    runs-on: macos-latest
+    steps:
+      - name: 🔑 Checkout Repository
+        uses: actions/checkout@v4
 
-    key_path = "AuthKey.p8"
-    key_id = os.getenv("APPSTORE_KEY_ID", "").strip()
-    issuer_id = os.getenv("APPSTORE_ISSUER_ID", "").strip()
+      - name: 🛠️ Setup Python
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install pyjwt cryptography  # ✅ Install dependencies
 
-    if not key_id:
-        raise ValueError("❌ ERROR: APPSTORE_KEY_ID is missing or empty!")
-    if not issuer_id:
-        raise ValueError("❌ ERROR: APPSTORE_ISSUER_ID is missing or empty!")
+      - name: 🔑 Generate JWT Token (Python)
+        id: jwt
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          echo "Using APPSTORE_KEY_ID: $APPSTORE_KEY_ID"
+          echo "$APPSTORE_PRIVATE_KEY" | base64 --decode > AuthKey.p8
 
-    with open(key_path, "rb") as key_file:  # ✅ Read in binary mode to prevent UnicodeDecodeError
-        private_key = key_file.read()
+          python3 <<EOF
+          import jwt
+          import time
+          import os
 
-    current_time = int(time.time())
-    payload = {
-        "iss": issuer_id,
-        "iat": current_time,
-        "exp": current_time + 1200,
-        "aud": "appstoreconnect-v1"
-    }
-    headers = {"alg": "ES256", "kid": key_id}
-    token = jwt.encode(payload, private_key, algorithm="ES256", headers=headers)
-    
-    print(f"✅ JWT Token Generated: {token[:20]}... (truncated)")
+          key_path = "AuthKey.p8"
+          key_id = os.getenv("APPSTORE_KEY_ID", "").strip()
+          issuer_id = os.getenv("APPSTORE_ISSUER_ID", "").strip()
 
-    with open(os.environ["GITHUB_ENV"], "a") as env_file:
-        env_file.write(f"JWT_TOKEN={token}\n")
-    EOF
+          if not key_id:
+              raise ValueError("❌ ERROR: APPSTORE_KEY_ID is missing or empty!")
+          if not issuer_id:
+              raise ValueError("❌ ERROR: APPSTORE_ISSUER_ID is missing or empty!")
+
+          with open(key_path, "rb") as key_file:
+              private_key = key_file.read()
+
+          current_time = int(time.time())
+          payload = {
+              "iss": issuer_id,
+              "iat": current_time,
+              "exp": current_time + 1200,
+              "aud": "appstoreconnect-v1"
+          }
+          headers = {"alg": "ES256", "kid": key_id}
+          token = jwt.encode(payload, private_key, algorithm="ES256", headers=headers)
+          
+          print(f"✅ JWT Token Generated: {token[:20]}... (truncated)")
+
+          with open(os.environ["GITHUB_ENV"], "a") as env_file:
+              env_file.write(f"JWT_TOKEN={token}\n")
+          EOF
