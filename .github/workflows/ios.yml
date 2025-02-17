@@ -1,80 +1,45 @@
-name: Trigger Xcode Cloud Workflow
+name: Xcode Cloud Build
+
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  trigger-xcode-cloud:
+  build:
     runs-on: macos-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
 
-      - name: Set up Python for JWT generation
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.9'  # Change if needed
 
-      - name: Install PyJWT
-        run: pip install pyjwt
+      - name: Install Dependencies
+        run: |
+          pip install jwt cryptography requests
 
       - name: Generate JWT Token
-        id: generate-jwt
-        env:
-          ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }} # Your Apple Issuer ID
-          KEY_ID: ${{ secrets.APPLE_KEY_ID }}      # Your Apple Key ID
-          PRIVATE_KEY: ${{ secrets.APPLE_PRIVATE_KEY }} # Your Apple Private Key (base64 encoded)
         run: |
-          python3 -c "
-          import jwt
-          import time
-          import os
+          echo "Generating JWT Token..."
+          echo "import jwt, time
+          from jwt.algorithms import ECAlgorithm
+          private_key = \"${{ secrets.PRIVATE_KEY }}\"
+          key_id = \"${{ secrets.APPLE_KEY_ID }}\"
+          payload = {\"iat\": int(time.time()), \"exp\": int(time.time()) + 600, \"aud\": \"xcode-cloud\"}
+          token = jwt.encode(payload, private_key, algorithm='ES256', headers={\"kid\": key_id})
+          print(f'::set-output name=JWT_TOKEN::{token}')" > generate_jwt.py
+          python generate_jwt.py
 
-          # Load environment variables
-          issuer_id = os.getenv('ISSUER_ID')
-          key_id = os.getenv('KEY_ID')
-          private_key = os.getenv('PRIVATE_KEY')
-
-          # Decode the base64-encoded private key
-          private_key = private_key.replace('\\n', '\n')
-
-          # Create the JWT token
-          token = jwt.encode(
-              {
-                  'iss': issuer_id,
-                  'iat': int(time.time()),
-                  'exp': int(time.time()) + 1200,  # Token expires in 20 minutes
-                  'aud': 'appstoreconnect-v1'
-              },
-              private_key,
-              algorithm='ES256',
-              headers={'kid': key_id}
-          )
-
-          # Output the token for use in the next step
-          print(f'::set-output name=JWT_TOKEN::{token}')
-          "
-
-      - name: Trigger Xcode Cloud Build
-        env:
-          JWT_TOKEN: ${{ steps.generate-jwt.outputs.JWT_TOKEN }}
-          WORKFLOW_ID: ${{ secrets.XCODE_CLOUD_WORKFLOW_ID }} # Your Xcode Cloud Workflow ID
+      - name: Run Xcode Cloud Workflow
         run: |
-          curl -X POST \
+          echo "Running Xcode Cloud Workflow..."
+          curl -X POST "https://developer.apple.com/xcode-cloud/api/workflows/${{ secrets.XCODE_CLOUD_WORKFLOW_ID }}/start" \
             -H "Authorization: Bearer $JWT_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "data": {
-                "type": "ciWorkflowRuns",
-                "relationships": {
-                  "workflow": {
-                    "data": {
-                      "type": "ciWorkflows",
-                      "id": "$WORKFLOW_ID"
-                    }
-                  }
-                }
-              }
-            }' \
-            "https://api.appstoreconnect.apple.com/v1/ciWorkflowRuns"
+            -H "Content-Type: application/json"
