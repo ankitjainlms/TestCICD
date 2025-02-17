@@ -26,6 +26,7 @@ jobs:
           KEY_ID: ${{ secrets.APPLE_KEY_ID }}      # Your Apple Key ID
           PRIVATE_KEY: ${{ secrets.APPLE_PRIVATE_KEY }} # Your Apple Private Key (base64 encoded)
         run: |
+          python3 -c "
           import jwt
           import time
           import os
@@ -53,6 +54,7 @@ jobs:
 
           # Output the token for use in the next step
           print(f'::set-output name=JWT_TOKEN::{token}')
+          "
 
       - name: Trigger Xcode Cloud Build
         env:
