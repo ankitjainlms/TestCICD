@@ -1,64 +1,78 @@
-name: 🚀 Trigger Xcode Cloud Build
-
+name: Trigger Xcode Cloud Workflow
 on:
-  workflow_dispatch:
   push:
     branches:
-      - main  # Change to your main branch if needed
+      - main
 
 jobs:
-  trigger_xcode_cloud:
+  trigger-xcode-cloud:
     runs-on: macos-latest
     steps:
-      - name: 🔑 Checkout Repository
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: 🛠️ Setup Python
-        run: |
-          python3 -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install pyjwt cryptography  # ✅ Install dependencies
+      - name: Set up Python for JWT generation
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
 
-      - name: 🔑 Generate JWT Token (Python)
-        id: jwt
+      - name: Install PyJWT
+        run: pip install pyjwt
+
+      - name: Generate JWT Token
+        id: generate-jwt
         env:
-          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
-          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
-          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+          ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }} # Your Apple Issuer ID
+          KEY_ID: ${{ secrets.APPLE_KEY_ID }}      # Your Apple Key ID
+          PRIVATE_KEY: ${{ secrets.APPLE_PRIVATE_KEY }} # Your Apple Private Key (base64 encoded)
         run: |
-          echo "Using APPSTORE_KEY_ID: $APPSTORE_KEY_ID"
-          echo "$APPSTORE_PRIVATE_KEY" | base64 --decode > AuthKey.p8
-
-          python3 <<EOF
           import jwt
           import time
           import os
 
-          key_path = "AuthKey.p8"
-          key_id = os.getenv("APPSTORE_KEY_ID", "").strip()
-          issuer_id = os.getenv("APPSTORE_ISSUER_ID", "").strip()
+          # Load environment variables
+          issuer_id = os.getenv('ISSUER_ID')
+          key_id = os.getenv('KEY_ID')
+          private_key = os.getenv('PRIVATE_KEY')
 
-          if not key_id:
-              raise ValueError("❌ ERROR: APPSTORE_KEY_ID is missing or empty!")
-          if not issuer_id:
-              raise ValueError("❌ ERROR: APPSTORE_ISSUER_ID is missing or empty!")
+          # Decode the base64-encoded private key
+          private_key = private_key.replace('\\n', '\n')
 
-          with open(key_path, "rb") as key_file:
-              private_key = key_file.read()
+          # Create the JWT token
+          token = jwt.encode(
+              {
+                  'iss': issuer_id,
+                  'iat': int(time.time()),
+                  'exp': int(time.time()) + 1200,  # Token expires in 20 minutes
+                  'aud': 'appstoreconnect-v1'
+              },
+              private_key,
+              algorithm='ES256',
+              headers={'kid': key_id}
+          )
 
-          current_time = int(time.time())
-          payload = {
-              "iss": issuer_id,
-              "iat": current_time,
-              "exp": current_time + 1200,
-              "aud": "appstoreconnect-v1"
-          }
-          headers = {"alg": "ES256", "kid": key_id}
-          token = jwt.encode(payload, private_key, algorithm="ES256", headers=headers)
-          
-          print(f"✅ JWT Token Generated: {token[:20]}... (truncated)")
+          # Output the token for use in the next step
+          print(f'::set-output name=JWT_TOKEN::{token}')
 
-          with open(os.environ["GITHUB_ENV"], "a") as env_file:
-              env_file.write(f"JWT_TOKEN={token}\n")
-          EOF
+      - name: Trigger Xcode Cloud Build
+        env:
+          JWT_TOKEN: ${{ steps.generate-jwt.outputs.JWT_TOKEN }}
+          WORKFLOW_ID: ${{ secrets.XCODE_CLOUD_WORKFLOW_ID }} # Your Xcode Cloud Workflow ID
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer $JWT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "data": {
+                "type": "ciWorkflowRuns",
+                "relationships": {
+                  "workflow": {
+                    "data": {
+                      "type": "ciWorkflows",
+                      "id": "$WORKFLOW_ID"
+                    }
+                  }
+                }
+              }
+            }' \
+            "https://api.appstoreconnect.apple.com/v1/ciWorkflowRuns"
