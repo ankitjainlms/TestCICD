@@ -4,42 +4,42 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
   build:
     runs-on: macos-latest
 
+    env:
+      PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+      APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+      APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+      XCODE_CLOUD_WORKFLOW_ID: ${{ secrets.XCODE_CLOUD_WORKFLOW_ID }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-     
-      - name: Debug Environment Variables
-        run: |
-          echo "Checking environment variables..."
-          echo "APPLE_KEY_ID: ${APPLE_KEY_ID}"
-          echo "APPLE_ISSUER_ID: ${APPLE_ISSUER_ID}"
-          echo "XCODE_CLOUD_WORKFLOW_ID: ${XCODE_CLOUD_WORKFLOW_ID}"
-          if [ -z "$PRIVATE_KEY" ]; then echo "❌ PRIVATE_KEY is missing!"; exit 1; fi
-     
+
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'  # Change version if needed
+          python-version: '3.9'
 
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
           pip install pyjwt cryptography requests
 
-      - name: Generate JWT Token
+      - name: 🔍 Debug Environment Variables
         run: |
-          python generate_jwt.py
+          echo "Checking environment variables..."
+          [[ -z "$APPLE_KEY_ID" ]] && echo "❌ APPLE_KEY_ID is missing!" || echo "✅ APPLE_KEY_ID is set."
+          [[ -z "$APPLE_ISSUER_ID" ]] && echo "❌ APPLE_ISSUER_ID is missing!" || echo "✅ APPLE_ISSUER_ID is set."
+          [[ -z "$XCODE_CLOUD_WORKFLOW_ID" ]] && echo "❌ XCODE_CLOUD_WORKFLOW_ID is missing!" || echo "✅ XCODE_CLOUD_WORKFLOW_ID is set."
+          [[ -z "$PRIVATE_KEY" ]] && echo "❌ PRIVATE_KEY is missing!" || echo "✅ PRIVATE_KEY is set."
+          [[ -z "$PRIVATE_KEY" ]] && exit 1
+
+      - name: Generate JWT Token
+        run: python generate_jwt.py
 
       - name: Run Xcode Cloud Workflow
-        run: |
-          python trigger_xcode_cloud.py
-      
-    
+        run: python trigger_xcode_cloud.py
