@@ -2,10 +2,17 @@ import jwt
 import time
 import os
 
-# Load secrets from GitHub environment variables
-private_key = os.getenv("PRIVATE_KEY").replace("\\n", "\n")
+# Load secrets
+private_key = os.getenv("PRIVATE_KEY")
 key_id = os.getenv("APPLE_KEY_ID")
 issuer_id = os.getenv("APPLE_ISSUER_ID")
+
+# Check if secrets are missing
+if not private_key or not key_id or not issuer_id:
+    raise ValueError("❌ Missing one or more required secrets!")
+
+# Fix private key format
+private_key = private_key.replace("\\n", "\n")
 
 # JWT Payload
 payload = {
