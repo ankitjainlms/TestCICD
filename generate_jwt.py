@@ -2,28 +2,37 @@ import jwt
 import time
 import os
 
-# Load secrets
-private_key = os.getenv("PRIVATE_KEY")
-key_id = os.getenv("APPLE_KEY_ID")
-issuer_id = os.getenv("APPLE_ISSUER_ID")
+# Load environment variables
+APPLE_KEY_ID = os.getenv("APPLE_KEY_ID")
+APPLE_ISSUER_ID = os.getenv("APPLE_ISSUER_ID")
+PRIVATE_KEY = os.getenv("PRIVATE_KEY")
 
-# Check if secrets are missing
-if not private_key or not key_id or not issuer_id:
+if not APPLE_KEY_ID or not APPLE_ISSUER_ID or not PRIVATE_KEY:
     raise ValueError("❌ Missing one or more required secrets!")
 
-# Fix private key format
-private_key = private_key.replace("\\n", "\n")
+# Format the private key correctly
+PRIVATE_KEY = PRIVATE_KEY.replace("\\n", "\n")  
 
-# JWT Payload
+# Generate JWT
+now = int(time.time())
 payload = {
-    "iss": issuer_id,
-    "iat": int(time.time()),
-    "exp": int(time.time()) + 600,
+    "iss": APPLE_ISSUER_ID,
+    "iat": now,
+    "exp": now + 1200,  # Token valid for 20 minutes
     "aud": "appstoreconnect-v1"
 }
 
-# Generate JWT Token
-token = jwt.encode(payload, private_key, algorithm="ES256", headers={"kid": key_id})
+headers = {
+    "alg": "ES256",
+    "kid": APPLE_KEY_ID,
+    "typ": "JWT"
+}
 
-# Print token for GitHub Actions
-print(f"::set-output name=JWT_TOKEN::{token}")
+# Generate the signed token
+try:
+    jwt_token = jwt.encode(payload, PRIVATE_KEY, algorithm="ES256", headers=headers)
+    print("✅ Successfully generated JWT Token:")
+    print(jwt_token)
+except Exception as e:
+    print(f"❌ Error generating JWT Token: {e}")
+    exit(1)
