@@ -36,7 +36,6 @@ jobs:
           [[ -z "$APPLE_ISSUER_ID" ]] && echo "❌ APPLE_ISSUER_ID is missing!" || echo "✅ APPLE_ISSUER_ID is set."
           [[ -z "$XCODE_CLOUD_WORKFLOW_ID" ]] && echo "❌ XCODE_CLOUD_WORKFLOW_ID is missing!" || echo "✅ XCODE_CLOUD_WORKFLOW_ID is set."
           [[ -z "$PRIVATE_KEY" ]] && echo "❌ PRIVATE_KEY is missing!" || echo "✅ PRIVATE_KEY is set."
-          [[ -z "$PRIVATE_KEY" ]] && exit 1
 
       - name: Generate JWT Token
         run: python generate_jwt.py
